@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>FocusENEM - Gerenciador Time Box</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f4f6f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 1.2rem; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; } 
+        .timer-display { font-size: 2.8rem; font-weight: bold; color: #e74c3c; margin: 0.4rem 0; font-family: monospace; }
+        .form-group { text-align: left; margin-bottom: 0.6rem; }
+        label { font-weight: 600; font-size: 0.85rem; color: #34495e; display: block; }
+        input, select, button { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 5px; font-size: 0.85rem; }
+        button { background: #27ae60; color: white; font-weight: bold; border: none; cursor: pointer; margin-top: 0.4rem; }
+        .stop-btn { background: #e74c3c; display: none; }
+        ul { list-style: none; padding: 0; max-height: 120px; overflow-y: auto; }
+        li { background: #f8f9fa; padding: 0.35rem; border-left: 3px solid #27ae60; margin-bottom: 0.35rem; font-size: 0.8rem; text-align: left; } 
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>■ FocusENEM - Time Box</h2>
+    
+    <div class="form-group">
+        <label>Área do ENEM:</label>
+        <select id="materia">
+            <option value="Matemática">Matemática</option>
+            <option value="Redação">Redação</option>
+            <option value="Linguagens">Linguagens</option>
+            <option value="Ciências da Natureza">Ciências da Natureza</option>
+            <option value="Ciências Humanas">Ciências Humanas</option>
+        </select>
+    </div>
+
+    <!-- IMPLEMENTAÇÃO DA MISSÃO 1: Campo de Tópico Específico -->
+    <div class="form-group">
+        <label>Tópico Específico / Conteúdo:</label>
+        <input type="text" id="topico" placeholder="Ex: Geometria Plana, Redação Nota 1000...">
+    </div>
+
+    <div class="form-group">
+        <label>Duração (minutos):</label>
+        <input type="number" id="duracao" value="25" min="1" max="60" oninput="atualizarTempoInicial()" onchange="atualizarTempoInicial()"> 
+    </div>
+
+    <div class="timer-display" id="timer">25:00</div>
+    <button id="startBtn" onclick="iniciarTimeBox()">Iniciar Bloco de Foco</button>
+    <button id="stopBtn" class="stop-btn" onclick="pararTimeBox()">Interromper Bloco</button>
+
+    <div style="text-align:left; margin-top:0.8rem;">
+        <h4 style="margin:0 0 0.2rem 0; font-size:0.85rem;">Blocos Concluídos</h4>
+        <ul id="listaHistorico"></ul>
+    </div>
+</div>
+
+<script>
+    let tempoRestante = 0, timerInterval = null;
+    // IMPLEMENTAÇÃO DA MISSÃO 4: Inicialização do array de histórico buscando dados salvos localmente
+    let historicoBlocos = JSON.parse(localStorage.getItem('focusEnem_historico')) || [];
+
+    // Carrega o histórico salvo assim que a página abre
+    window.onload = function() {
+        renderizarHistorico();
+        atualizarTempoInicial();
+    };
+
+    function atualizarDisplay(segundos) {
+        const min = String(Math.floor(segundos / 60)).padStart(2, '0');
+        const seg = String(segundos % 60).padStart(2, '0');
+        document.getElementById('timer').innerText = `${min}:${seg}`;
+    }
+
+    function atualizarTempoInicial() {
+        const min = parseInt(document.getElementById('duracao').value);
+        if (!isNaN(min) && min > 0) atualizarDisplay(min * 60);
+    }
+
+    function iniciarTimeBox() {
+        const min = parseInt(document.getElementById('duracao').value);
+        if (isNaN(min) || min <= 0) return alert('Tempo inválido.');
+        tempoRestante = min * 60; 
+        atualizarDisplay(tempoRestante);
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'block';
+        
+        timerInterval = setInterval(() => {
+            tempoRestante--; 
+            atualizarDisplay(tempoRestante);
+            if (tempoRestante <= 0) {
+                clearInterval(timerInterval);
+                alert('■ Time Box encerrada! Faça sua pausa obrigatória.');
+                registrarBloco(); 
+                resetsInterface();
+            }
+        }, 1000);
+    }
+
+    function pararTimeBox() { 
+        clearInterval(timerInterval); 
+        alert('Bloco interrompido.'); 
+        resetsInterface(); 
+    }
+
+    function resetsInterface() {
+        document.getElementById('startBtn').style.display = 'block';
+        document.getElementById('stopBtn').style.display = 'none';
+        atualizarTempoInicial();
+    }
+
+    // IMPLEMENTAÇÃO DAS MISSÕES 1 E 4: Captura dados personalizados e salva no localStorage
+    function registrarBloco() {
+        const materia = document.getElementById('materia').value;
+        const min = document.getElementById('duracao').value;
+        // Se o usuário não preencher o tópico, define como "Não especificado"
+        const topico = document.getElementById('topico').value.trim() || "Não especificado";
+
+        // Cria o objeto do novo bloco concluído
+        const novoBloco = {
+            materia: materia,
+            topico: topico,
+            duracao: min
+        };
+
+        // Adiciona ao array global e atualiza o armazenamento do navegador (localStorage)
+        historicoBlocos.push(novoBloco);
+        localStorage.setItem('focusEnem_historico', JSON.stringify(historicoBlocos));
+
+        // Atualiza a exibição visual na tela
+        renderizarHistorico();
+        
+        // Limpa o campo de tópico para a próxima sessão
+        document.getElementById('topico').value = "";
+    }
+
+    // Função auxiliar para redesenhar a lista de blocos gravados
+    function renderizarHistorico() {
+        const lista = document.getElementById('listaHistorico');
+        lista.innerHTML = ""; // Limpa a lista existente
+
+        historicoBlocos.forEach(bloco => {
+            const item = document.createElement('li');
+            item.innerText = `■ ${bloco.materia} (${bloco.topico}) - Bloco de ${bloco.duracao} min concluído.`;
+            lista.appendChild(item);
+        });
+    }
+</script>
+</body>
+</html>
