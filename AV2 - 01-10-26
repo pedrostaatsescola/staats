@@ -1,0 +1,342 @@
+import React, { useState } from 'react';
+import { Text, View, Button, StyleSheet, Modal, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+
+export default function App() {
+  // Lista inicial de receitas para o App não começar totalmente vazio
+  const [receitas, setReceitas] = useState([
+    {
+      id: '1',
+      nome: 'Bolo de Cenoura',
+      ingredientes: '• 3 cenouras médias\n• 4 ovos\n• 1 xícara de óleo\n• 2 xícaras de açúcar\n• 2 xícaras de farinha\n• 1 colher de fermento',
+      preparo: 'Bata no liquidificador as cenouras, os ovos e o óleo. Misture o açúcar e a farinha em uma tigela, adicione o líquido e por último o fermento. Asse por 40 minutos.'
+    }
+  ]);
+
+  // Estados para controle de visibilidade dos Modals
+  const [verReceitaVisivel, setVerReceitaVisivel] = useState(false);
+  const [cadastroVisivel, setCadastroVisivel] = useState(false);
+
+  // Estado para guardar a receita selecionada que o usuário quer ler
+  const [receitaSelecionada, setReceitaSelecionada] = useState(null);
+
+  // Estados dos campos do formulário de cadastro (Requisito 4)
+  const [nomeInput, setNomeInput] = useState('');
+  const [ingredientesInput, setIngredientesInput] = useState('');
+  const [preparoInput, setPreparoInput] = useState('');
+
+  // Função para abrir os detalhes de uma receita específica
+  const lidarVerReceita = (receita) => {
+    setReceitaSelecionada(receita);
+    setVerReceitaVisivel(true);
+  };
+
+  // Função para validar e salvar a nova receita (Requisito 4)
+  const salvarReceita = () => {
+    if (!nomeInput.trim() || !ingredientesInput.trim() || !preparoInput.trim()) {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos!');
+      return;
+    }
+
+    const novaReceita = {
+      id: Math.random().toString(),
+      nome: nomeInput,
+      ingredientes: ingredientesInput,
+      preparo: preparoInput,
+    };
+
+    setReceitas([...receitas, novaReceita]);
+    Alert.alert('Sucesso', 'Receita salva com sucesso!');
+    limparFormulario();
+  };
+
+  // Função para o botão cancelar e limpar os campos (Requisito 4)
+  const cancelarCadastro = () => {
+    limparFormulario();
+  };
+
+  const limparFormulario = () => {
+    setNomeInput('');
+    setIngredientesInput('');
+    setPreparoInput('');
+    setCadastroVisivel(false);
+  };
+
+  return (
+    <View style={styles.container}>
+      
+      {/* TELA INICIAL COM SCROLLVIEW (Requisito 4) */}
+      <ScrollView contentContainerStyle={styles.mainScroll}>
+        <Text style={styles.title}>📱 App de Receitas</Text>
+        <Text style={styles.subtitle}>Colecione suas receitas preferidas</Text>
+
+        {/* Renderização dinâmica dos cartões de receitas */}
+        {receitas.map((item) => (
+          <View key={item.id} style={styles.card}>
+            <Text style={styles.cardTitle}>🍴 {item.nome}</Text>
+            <Button 
+              title="Ver Receita" 
+              color="#e65100" 
+              onPress={() => lidarVerReceita(item)} 
+            />
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* REQUISITO 2: Modal de Visualização de Detalhes */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={verReceitaVisivel}
+        onRequestClose={() => setVerReceitaVisivel(false)}
+      >
+        {receitaSelecionada && (
+          <ScrollView contentContainerStyle={styles.recipeContainer}>
+            <Text style={styles.recipeTitle}>📖 {receitaSelecionada.nome}</Text>
+            
+            <Text style={styles.sectionTitle}>Ingredientes</Text>
+            <Text style={styles.recipeText}>{receitaSelecionada.ingredientes}</Text>
+
+            <Text style={styles.sectionTitle}>Modo de Preparo</Text>
+            <Text style={styles.recipeText}>{receitaSelecionada.preparo}</Text>
+            
+            <TouchableOpacity style={styles.btnFechar} onPress={() => setVerReceitaVisivel(false)}>
+              <Text style={styles.btnButtonText}>Fechar Visualização</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        )}
+      </Modal>
+
+      {/* REQUISITO 3: Botão Flutuante (FAB) */}
+      <TouchableOpacity style={styles.fab} onPress={() => setCadastroVisivel(true)}>
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
+
+      {/* REQUISITO 4: Modal de Cadastro de Novas Receitas */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={cadastroVisivel}
+        onRequestClose={cancelarCadastro}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalFormBox}>
+            <Text style={styles.modalFormTitle}>Nova Receita</Text>
+
+            {/* Inputs de Texto */}
+            <TextInput
+              style={styles.input}
+              placeholder="Nome da receita"
+              placeholderTextColor="#999"
+              value={nomeInput}
+              onChangeText={setNomeInput}
+            />
+
+            <TextInput
+              style={[styles.input, styles.inputMultiline]}
+              placeholder="Ingredientes (um por linha)"
+              placeholderTextColor="#999"
+              multiline={true}
+              numberOfLines={4}
+              value={ingredientesInput}
+              onChangeText={setIngredientesInput}
+            />
+
+            <TextInput
+              style={[styles.input, styles.inputMultiline]}
+              placeholder="Modo de preparo"
+              placeholderTextColor="#999"
+              multiline={true}
+              numberOfLines={4}
+              value={preparoInput}
+              onChangeText={setPreparoInput}
+            />
+
+            {/* Botões do Formulário */}
+            <View style={styles.formActionGroup}>
+              <TouchableOpacity style={[styles.formBtn, styles.btnCancel]} onPress={cancelarCadastro}>
+                <Text style={styles.btnButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.formBtn, styles.btnSave]} onPress={salvarReceita}>
+                <Text style={styles.btnButtonText}>Salvar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  // Estrutura Principal da Tela Inicial
+  container: {
+    flex: 1,
+    backgroundColor: "#fff8e1"
+  },
+  mainScroll: {
+    padding: 20,
+    paddingTop: 60,
+    alignItems: "center"
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#bf360c", 
+    marginBottom: 12,
+    textAlign: "center"
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#5d4037", 
+    marginBottom: 32,
+    textAlign: "center"
+  },
+  // Requisito 4: Cartão Individual de Receita
+  card: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#ffe082",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#5d4037",
+    marginBottom: 12
+  },
+  // Requisito 2: Estilos da Tela do Modal de Detalhes
+  recipeContainer: {
+    padding: 25,
+    paddingTop: 50,
+    backgroundColor: "#ffffff",
+  },
+  recipeTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#bf360c",
+    marginBottom: 20,
+    textAlign: "center"
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#5d4037",
+    marginTop: 20,
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ffe082",
+    paddingBottom: 4
+  },
+  recipeText: {
+    fontSize: 16,
+    color: "#4e342e",
+    lineHeight: 24,
+    marginBottom: 6
+  },
+  btnFechar: {
+    backgroundColor: "#d84315",
+    padding: 14,
+    borderRadius: 8,
+    marginTop: 35,
+    alignItems: "center",
+    marginBottom: 40
+  },
+  btnButtonText: {
+    color: "#ffffff",
+    fontWeight: "bold",
+    fontSize: 16
+  },
+  // Requisito 3: Estilos do Botão Flutuante (FAB)
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#e65100",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  fabText: {
+    color: "#ffffff",
+    fontSize: 32,
+    fontWeight: "bold",
+    lineHeight: 34
+  },
+  // Requisito 4: Estilos do Modal de Formulário / Cadastro
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  modalFormBox: {
+    width: "85%",
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 20,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+  },
+  modalFormTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#bf360c",
+    marginBottom: 20,
+    textAlign: "center"
+  },
+  input: {
+    width: "100%",
+    backgroundColor: "#fbc02d10",
+    borderColor: "#ffe082",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: "#5d4037",
+    marginBottom: 16
+  },
+  inputMultiline: {
+    height: 90,
+    textAlignVertical: "top"
+  },
+  formActionGroup: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8
+  },
+  formBtn: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 6
+  },
+  btnCancel: {
+    backgroundColor: "#757575"
+  },
+  btnSave: {
+    backgroundColor: "#2e7d32"
+  }
+});
