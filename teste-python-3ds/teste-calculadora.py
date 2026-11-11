@@ -1,29 +1,38 @@
 # test_calculadora.py
-import unittest
+import pytest
 from calculadora import soma, subtrai, multiplica, divide
 
-class TestCalculadora(unittest.TestCase):
+@pytest.mark.parametrize("a, b, esperado", [
+    (1, 2, 3),
+    (-1, 1, 0),
+    (-1, -1, -2)
+])
+def test_soma(a, b, esperado):
+    assert soma(a, b) == esperado
 
-    def test_soma(self):
-        self.assertEqual(soma(1, 2), 3)
-        self.assertEqual(soma(-1, 1), 0)
-        self.assertEqual(soma(-1, -1), -2)
+@pytest.mark.parametrize("a, b, esperado", [
+    (10, 5, 5),
+    (-1, -1, 0),
+    (0, 1, -1)
+])
+def test_subtrai(a, b, esperado):
+    assert subtrai(a, b) == esperado
 
-    def test_subtrai(self):
-        self.assertEqual(subtrai(10, 5), 5)
-        self.assertEqual(subtrai(-1, -1), 0)
-        self.assertEqual(subtrai(0, 1), -1)
+@pytest.mark.parametrize("a, b, esperado", [
+    (3, 7, 21),
+    (-1, 1, -1),
+    (0, 10, 0)
+])
+def test_multiplica(a, b, esperado):
+    assert multiplica(a, b) == esperado
 
-    def test_multiplica(self):
-        self.assertEqual(multiplica(3, 7), 21)
-        self.assertEqual(multiplica(-1, 1), -1)
-        self.assertEqual(multiplica(0, 10), 0)
+@pytest.mark.parametrize("a, b, esperado", [
+    (10, 2, 5),
+    (-10, 2, -5)
+])
+def test_divide(a, b, esperado):
+    assert divide(a, b) == esperado
 
-    def test_divide(self):
-        self.assertEqual(divide(10, 2), 5)
-        self.assertEqual(divide(-10, 2), -5)
-        with self.assertRaises(ValueError):
-            divide(10, 0)
-
-if __name__ == '__main__':
-    unittest.main()
+def test_divide_por_zero():
+    with pytest.raises(ValueError):
+        divide(10, 0)
